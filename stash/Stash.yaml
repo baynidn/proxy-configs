@@ -1,0 +1,369 @@
+# ============================================================
+# Stash 配置（官方字段版 · 全字段注释版）
+# ------------------------------------------------------------
+# 重要：Stash 是 Clash Premium 兼容内核，不是 Mihomo。
+# 本文件只写 Stash 官方文档（stash.wiki）明确支持的字段。
+# 字段来源：https://stash.wiki/configuration/example-config 等官方页
+# 使用前替换占位符：<你的订阅地址> = 节点订阅链接
+# 三端说明：本文件 iOS / 安卓 / PC 三端通用，无需任何修改——Stash 没有 tun 段，
+#   虚拟网卡由各平台 App 自己接管。
+# ============================================================
+
+# ---- 节点订阅（proxy-providers）：Stash 只认下面这几个字段 ----
+proxy-providers:
+  订阅节点:
+    url: "<你的订阅地址>"  # 订阅链接
+    interval: 3600  # 自动更新间隔（秒）
+    path: ./proxies/dingyue.yaml  # 本地缓存路径（只能在 Stash 资源目录内；只写 path 不写 url = 本地静态文件，不更新）
+    # filter: "香港|HK"  # 只收名字匹配的节点（正则）
+    filter: "^(?=.*(.*))(?!.*((?i)下载|频道|软件|维护|没有|回家|关注|回国|校园|教育|久虚|IPV6|邀请|地址|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|群|贩卖|通知|倒卖|防止|国内|unblock|music|云音乐|🎧|🎮|公告|剩余|防走失|失联|续费|充值|套餐|余额|订单|优惠|活动|广告|试用|体验|停用|失效|发布|永久|搬家|(\\b(GAME|USE|USED|TOTAL|EXPIRE|EMAIL|Panel)\\b|(\\d{4}-\\d{2}-\\d{2}|\\dG)))).*$"  # 排除信息假节点（前瞻写法，Stash 支持；与 Surge 的 ✈️ 名单同一份）。想只收某类节点就换成上面示例的正向写法，二选一
+    headers:  # 更新订阅时附加的请求头（注意是复数 headers，与 Mihomo 的单数 header 不同）
+      User-Agent:
+        - "Stash"
+    benchmark-url: http://www.gstatic.com/generate_204  # 本订阅全部节点的统一测速地址
+    benchmark-timeout: 5  # 测速超时（秒）
+
+# ---- 基础 ----
+mode: rule  # 分流模式：rule=按规则(推荐) / global=全局代理 / direct=全局直连
+log-level: info  # 日志级别：silent/info/warning/error/debug
+ipv6: false  # false=Stash 自身解析只走 IPv4 且不给应用返回 AAAA。推荐 false
+
+# ---- 自定义 hosts（支持通配：*.example.com 子域 / .example.com 子域+自身） ----
+# hosts:
+#   'nas.home': 192.168.1.10
+#   '*.internal.example.com': 10.0.0.2
+
+# ---- DNS（Stash 只有 Fake-IP 一种模式，没有 enhanced-mode 这个字段） ----
+dns:
+  default-nameserver:  # 兜底 DNS：解析下面加密 DNS 的域名用；非 system 的条目必须是纯 IP
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:  # 主 DNS：支持 UDP/TCP/DoT/DoH/DoH3/DoQ 与 system；全部服务器并发查询、取最快（官方建议不超过 2 个）
+    - https://223.5.5.5/dns-query
+    - 119.29.29.29
+  nameserver-policy:  # 按域名指定 DNS：精确 > 通配 > 集合（geosite: / rule-set:，可逗号组合）
+    'geosite:cn,private': https://223.5.5.5/dns-query
+  proxy-server-nameserver:  # 专门解析「节点服务器域名」的 DNS：避免递归解析、节点域名解析更准（3.6+）
+    - https://223.5.5.5/dns-query
+  fallback:  # 备用 DNS：与主 DNS 并发查询，由 fallback-filter 决定采信谁
+    - https://1.12.12.12/dns-query
+  fallback-filter:  # 采信判定（Stash 只支持这四项，没有 geosite 项）
+    geoip: true
+    geoip-code: CN  # 默认 CN：结果是中国 IP 就信主 DNS
+    ipcidr:
+      - 240.0.0.0/4
+    domain:
+      - '+.google.com'
+      - '+.youtube.com'
+  fake-ip-range: 198.18.0.1/16  # fake-ip 地址池（默认值，别乱改）
+  fake-ip-filter:  # 这些域名返回真实 IP（支持通配 + geosite: / rule-set: 条目）
+    - '*.lan'
+    - '*.local'
+    - 'localhost'
+    - 'geosite:private'
+  ipv6: false  # false=只屏蔽给应用的 AAAA 回答（与顶层 ipv6 分工不同，这里管回答、顶层管自身解析）
+  skip-cert-verify: false  # 加密 DNS 的证书验证跳过（个别 DoH 兼容问题时才开）
+  # follow-rule: true  # DNS 查询改为按分流规则转发（相当于 Mihomo 的 respect-rules）；官方不建议开（易递归），保持注释
+
+
+proxies: []   # 不用订阅的话，在这里手动粘贴节点
+
+# ---- 策略组：以仓库根目录 Group.ini 为准（顺序、成员与之一致；✈️ 我的节点为 Surge 专用，不进本文件） ----
+proxy-groups:
+  - name: "AI"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/ChatGPT.png
+    proxies:
+      - "🇺🇸 美国节点"
+      - "🇭🇰 香港节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "兜底"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Proxy/Global.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇺🇸 美国节点"
+      - "🇸🇬 新国节点"
+  - name: "国内服务"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Microsoft.png
+    proxies:
+      - "DIRECT"
+      - "🇭🇰 香港节点"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外服务"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Google.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外社交"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Telegram.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外媒体"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/YouTube.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇨🇳 台湾节点"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国内媒体"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/bilibili.png
+    proxies:
+      - "DIRECT"
+      - "🇭🇰 香港节点"
+      - "🇨🇳 台湾节点"
+  - name: "游戏平台"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Game.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "🇭🇰 香港节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Hong_Kong.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇭🇰|香港|Hong|HK)"
+    interval: 300
+    tolerance: 50
+  - name: "🇺🇸 美国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/United_States.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇺🇸|美国|States|US)"
+    interval: 300
+    tolerance: 50
+  - name: "🇯🇵 日本节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Japan.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇯🇵|日本|Japan|JP)"
+    interval: 300
+    tolerance: 50
+  - name: "🇨🇳 台湾节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Taiwan.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇨🇳|台湾|Tai|TW)"
+    interval: 300
+    tolerance: 50
+  - name: "🇰🇷 韩国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Korea.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇰🇷|韩国|Korea|KR)"
+    interval: 300
+    tolerance: 50
+  - name: "🇸🇬 新国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Singapore.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇸🇬|新加坡|Singapore|SG)"
+    interval: 300
+    tolerance: 50
+
+# ---- 规则集：以仓库根目录 Rule.ini 为准（顺序与之一致） ----
+rule-providers:
+  Advertising:  # 去广告
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/Advertising.yaml"
+    path: ./rules/Advertising.yaml
+    interval: 86400  # 每天更新一次
+  BanAD:  # 去广告
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/BanAD.yaml"
+    path: ./rules/BanAD.yaml
+    interval: 86400  # 每天更新一次
+  Apple_All:  # 苹果-Apple_All
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/苹果服务/Apple_All.yaml"
+    path: ./rules/Apple_All.yaml
+    interval: 86400  # 每天更新一次
+  LinkedIn:  # 微软-LinkedIn
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/LinkedIn.yaml"
+    path: ./rules/LinkedIn.yaml
+    interval: 86400  # 每天更新一次
+  Microsoft:  # 微软-Microsoft
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Microsoft.yaml"
+    path: ./rules/Microsoft.yaml
+    interval: 86400  # 每天更新一次
+  Xbox:  # 微软-Xbox
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Xbox.yaml"
+    path: ./rules/Xbox.yaml
+    interval: 86400  # 每天更新一次
+  GitHub:  # GitHub
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/GitHub.yaml"
+    path: ./rules/GitHub.yaml
+    interval: 86400  # 每天更新一次
+  Google:  # 谷歌-Google
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/Google.yaml"
+    path: ./rules/Google.yaml
+    interval: 86400  # 每天更新一次
+  GoogleFCM:  # 谷歌-GoogleFCM
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/GoogleFCM.yaml"
+    path: ./rules/GoogleFCM.yaml
+    interval: 86400  # 每天更新一次
+  AI:  # AI 服务
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/ai/AI.yaml"
+    path: ./rules/AI.yaml
+    interval: 86400  # 每天更新一次
+  WeChat:  # 微信
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国内社交/WeChat.yaml"
+    path: ./rules/WeChat.yaml
+    interval: 86400  # 每天更新一次
+  Facebook:  # Facebook
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Facebook.yaml"
+    path: ./rules/Facebook.yaml
+    interval: 86400  # 每天更新一次
+  Telegram:  # Telegram
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Telegram.yaml"
+    path: ./rules/Telegram.yaml
+    interval: 86400  # 每天更新一次
+  Twitter:  # Twitter
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Twitter.yaml"
+    path: ./rules/Twitter.yaml
+    interval: 86400  # 每天更新一次
+  Instagram:  # instagram
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Instagram.yaml"
+    path: ./rules/Instagram.yaml
+    interval: 86400  # 每天更新一次
+  Bilibili:  # 哔哩哔哩
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Bilibili.yaml"
+    path: ./rules/Bilibili.yaml
+    interval: 86400  # 每天更新一次
+  ChinaMedia:  # 国内流媒体
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/ChinaMedia.yaml"
+    path: ./rules/ChinaMedia.yaml
+    interval: 86400  # 每天更新一次
+  YouTube:  # YouTube
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/YouTube.yaml"
+    path: ./rules/YouTube.yaml
+    interval: 86400  # 每天更新一次
+  Netflix:  # Netflix
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Netflix.yaml"
+    path: ./rules/Netflix.yaml
+    interval: 86400  # 每天更新一次
+  Disney:  # Disney+
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Disney.yaml"
+    path: ./rules/Disney.yaml
+    interval: 86400  # 每天更新一次
+  Twitch:  # Twitch
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Twitch.yaml"
+    path: ./rules/Twitch.yaml
+    interval: 86400  # 每天更新一次
+  Spotify:  # Spotify
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Spotify.yaml"
+    path: ./rules/Spotify.yaml
+    interval: 86400  # 每天更新一次
+  TikTok:  # TikTok
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/TikTok.yaml"
+    path: ./rules/TikTok.yaml
+    interval: 86400  # 每天更新一次
+  GlobalMedia:  # 国外流媒体
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/GlobalMedia.yaml"
+    path: ./rules/GlobalMedia.yaml
+    interval: 86400  # 每天更新一次
+  Game:  # 游戏平台（13 合 1）
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/游戏平台/Game.yaml"
+    path: ./rules/Game.yaml
+    interval: 86400  # 每天更新一次
+  ChinaMax:  # 大陆域名直连
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/ChinaMax.yaml"
+    path: ./rules/ChinaMax.yaml
+    interval: 86400  # 每天更新一次
+  Proxy:  # 通用代理
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/Proxy.yaml"
+    path: ./rules/Proxy.yaml
+    interval: 86400  # 每天更新一次
+# ---- 分流规则：rules.ini 的顺序，内联规则（IP-CIDR/FINAL）在最后 ----
+rules:
+  - IP-CIDR,0.0.0.0/32,REJECT
+  - RULE-SET,Advertising,REJECT  # 去广告
+  - RULE-SET,BanAD,REJECT  # 去广告
+  - RULE-SET,Apple_All,国内服务  # 苹果-Apple_All
+  - RULE-SET,LinkedIn,国内服务  # 微软-LinkedIn
+  - RULE-SET,Microsoft,国内服务  # 微软-Microsoft
+  - RULE-SET,Xbox,国内服务  # 微软-Xbox
+  - RULE-SET,GitHub,国外服务  # GitHub
+  - RULE-SET,Google,国外服务  # 谷歌-Google
+  - RULE-SET,GoogleFCM,国外服务  # 谷歌-GoogleFCM
+  - RULE-SET,AI,AI  # AI 服务
+  - RULE-SET,WeChat,DIRECT  # 微信
+  - RULE-SET,Facebook,国外社交  # Facebook
+  - RULE-SET,Telegram,国外社交  # Telegram
+  - RULE-SET,Twitter,国外社交  # Twitter
+  - RULE-SET,Instagram,国外社交  # instagram
+  - RULE-SET,Bilibili,国内媒体  # 哔哩哔哩
+  - RULE-SET,ChinaMedia,国内媒体  # 国内流媒体
+  - RULE-SET,YouTube,国外媒体  # YouTube
+  - RULE-SET,Netflix,国外媒体  # Netflix
+  - RULE-SET,Disney,国外媒体  # Disney+
+  - RULE-SET,Twitch,国外媒体  # Twitch
+  - RULE-SET,Spotify,国外媒体  # Spotify
+  - RULE-SET,TikTok,国外媒体  # TikTok
+  - RULE-SET,GlobalMedia,国外媒体  # 国外流媒体
+  - RULE-SET,Game,游戏平台  # 游戏平台（13 合 1）
+  - RULE-SET,ChinaMax,DIRECT  # 大陆域名直连
+  - RULE-SET,Proxy,兜底  # 通用代理
+  - IP-CIDR,10.0.0.0/8,DIRECT  # 局域网直连
+  - IP-CIDR,172.16.0.0/12,DIRECT  # 局域网直连
+  - IP-CIDR,192.168.0.0/16,DIRECT  # 局域网直连
+  - MATCH,兜底

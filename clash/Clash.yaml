@@ -1,0 +1,557 @@
+# ============================================================
+# Clash 配置（Mihomo 内核 · 全字段注释版）
+# ------------------------------------------------------------
+# 定位：通用设置按 Mihomo 官方 Wiki 写全，每项注明「作用 / 推荐值」；
+#       策略组、规则集、规则沿用自家现行结构（规则走 rules-public 公开仓）。
+# 字段来源：Mihomo 官方 Wiki https://wiki.metacubex.one/config/
+# 适用：FlClash / Clash Meta / Mihomo Party 等 Mihomo 内核客户端
+# 使用前替换占位符：
+#   <你的订阅地址>  下方 proxy-providers 的节点订阅链接
+#   <你的API密钥>   external-controller 的 secret（可选，见该项说明）
+# 注意：本文件是 Mihomo 专用，Stash 不认其中约一半字段（见 stash/Stash.yaml 文件头清单），别混用。
+# ============================================================
+
+# ---- 节点订阅（proxy-providers）：你的节点从这里来 ----
+proxy-providers:
+  订阅节点:
+    type: http  # 类型：http=远程订阅 / file=本地文件 / inline=内联（必填）
+    url: "<你的订阅地址>"  # 订阅链接
+    interval: 3600  # 自动更新间隔（秒），推荐 3600
+    path: ./proxies/dingyue.yaml  # 本地缓存路径
+    # proxy: 兜底  # 经哪个策略组下载订阅（订阅挂了、直连不通时才需要，填策略组名）
+    # size-limit: 0  # 订阅文件大小上限（字节），0=不限
+    header:  # 下载订阅时附加的请求头（一般不用）
+      User-Agent:
+        - "clash.meta"
+    health-check:  # 节点健康检查（Mihomo 专用，Stash 不认这个块）
+      enable: true  # 开启自动测速/探活
+      url: http://www.gstatic.com/generate_204  # 探活地址
+      interval: 600  # 探活间隔（秒）
+      timeout: 5000  # 探活超时（毫秒）
+      lazy: true  # true=组没被用时不探活（默认，省流量）
+      # expected-status: 204  # 期望状态码，不填=任意 2xx/3xx 都算活
+    # override:  # 统一改写节点参数（一般不用；需要时逐项开）
+    #   udp: true  # 强制给节点加 UDP
+    #   skip-cert-verify: false  # 统一跳过证书验证
+    #   additional-suffix: " [改]"  # 节点名统一加后缀
+    # filter: "香港|HK"  # 只收名字匹配的节点（与下面策略组的 filter 二选一即可）
+    exclude-filter: "(?i)下载|频道|软件|维护|没有|回家|关注|回国|校园|教育|久虚|IPV6|邀请|地址|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|群|贩卖|通知|倒卖|防止|国内|unblock|music|云音乐|🎧|🎮|公告|剩余|防走失|失联|续费|充值|套餐|余额|订单|优惠|活动|广告|试用|体验|停用|失效|发布|永久|搬家|(\\b(GAME|USE|USED|TOTAL|EXPIRE|EMAIL|Panel)\\b|(\\d{4}-\\d{2}-\\d{2}|\\dG))|更新"  # 排除名字匹配的节点：信息假节点在订阅层统一排（与 Surge 的 ✈️ 名单同一份），地区组不再单独排
+
+# ---- 入站端口 ----
+mixed-port: 7890  # HTTP+SOCKS5 混合端口（推荐：只开这一个就够）
+# port: 7890  # 单独的 HTTP 端口（与 mixed-port 二选一，一般不用）
+# socks-port: 7891  # 单独的 SOCKS5 端口（同上）
+# redir-port: 7892  # 透明代理端口（仅 Linux/Android/macOS 软路由场景，手机端不用）
+# tproxy-port: 7893  # TProxy 透明端口（仅 Linux/Android 高级玩法，手机端不用）
+
+# ---- 局域网共享 ----
+allow-lan: false  # 是否允许局域网其他设备连代理端口。推荐 false（防蹭网）；要共享给电脑/电视再开
+# bind-address: "*"  # 局域网监听地址（allow-lan 开时才有意义）："*"=全部 / 单个IP=只绑那个口
+# lan-allowed-ips:  # 允许连入的来源网段（默认 0.0.0.0/0 与 ::/0 = 不限，开共享时建议收紧）
+#   - 192.168.0.0/16
+# lan-disallowed-ips:  # 禁止连入的来源网段（黑名单优先于白名单）
+#   - 192.168.1.10/32
+# authentication:  # 代理端口账号密码（开局域网共享时强烈建议设）
+#   - "user:pass"
+# skip-auth-prefixes:  # 这些来源免认证（本机回环一般免）
+#   - 127.0.0.1/8
+
+# ---- 内核行为 ----
+mode: rule  # 分流模式：rule=按规则(推荐) / global=全局代理 / direct=全局直连
+log-level: info  # 日志级别：silent/error/warning/info/debug。推荐 info；排查问题用 debug
+ipv6: false  # 内核是否接受 IPv6 流量。推荐 false（你的网络以 IPv4 为主，开了徒增延迟）
+keep-alive-interval: 15  # TCP 保活包间隔（秒），防连接被运营商掐断，推荐 15
+# keep-alive-idle: 15  # TCP 保活最大空闲（秒），一般默认即可
+# disable-keep-alive: false  # 关掉 TCP 保活（安卓端会被强制开启，写了也以系统为准）
+find-process-mode: strict  # 进程匹配（PROCESS 规则用）：strict=自动判断(推荐) / always=强制 / off=关
+unified-delay: true  # 统一延迟计算：扣掉握手时间再比延迟，测速更公平，推荐 true
+tcp-concurrent: true  # TCP 并发拨号：一个域名多个 IP 同时连、用最先通的，推荐 true（连通更快）
+# interface-name: en0  # 默认出站网卡（多网卡/软路由才需要，手机端别填）
+# routing-mark: 6666  # 出站流量路由标记（仅 Linux，手机端别填）
+# global-ua: clash.meta  # 下载外部资源(订阅/规则/Geo库)时用的 UA，默认 clash.meta；个别订阅按 UA 下发格式时才改
+# etag-support: true  # 外部资源下载支持 ETag 缓存（默认 true，省流量）
+
+# ---- 外部控制器（面板/API） ----
+external-controller: 127.0.0.1:9090  # API 监听地址。推荐只绑 127.0.0.1（仅本机，面板在本机用没问题）
+# secret: "<你的API密钥>"  # API 密钥：只绑本机时可不设；一旦改绑 0.0.0.0 必须设，否则局域网谁都能控制
+# external-controller-cors:  # 跨域设置（网页版面板如 yacd/zashboard 直连 API 时需要）
+#   allow-origins:
+#     - "*"
+#   allow-private-network: true
+# external-ui: ./ui  # 本地网页面板目录（桌面端自架面板才用，手机端不用）
+# external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"  # 面板自动下载地址（同上）
+
+# ---- 配置记忆 ----
+profile:
+  store-selected: true  # 记住策略组手动选的节点（重启不丢失），推荐 true
+  store-fake-ip: true  # 记住 fake-ip 映射表（重启恢复更快），推荐 true
+
+# ---- Geo 数据库 ----
+geodata-mode: true  # GeoIP 格式：true=用 .dat（与下面 geox-url 的 dat 源配套） / false=用 .mmdb
+# geodata-loader: memconservative  # 加载方式：memconservative=省内存(默认) / standard=全载入更快更耗内存
+geo-auto-update: true  # 自动更新 Geo 数据库，推荐 true
+geo-update-interval: 24  # 更新间隔（小时）
+geox-url:  # 数据库下载源：默认 GitHub 源在你这边被墙，统一走 jsDelivr 镜像
+  geoip: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat
+  geosite: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat
+  mmdb: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb
+  # asn: https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb
+
+# ---- DNS ----
+# 说明：Mihomo 的 DNS 是 fake-ip 模式：域名先给假 IP，连接时再按域名分流。
+# 服务器地址可加 # 后缀参数：#h3=强制HTTP/3、#DIRECT=指定出站、disable-qtype-65=屏蔽HTTPS查询类型，& 连接多个。
+dns:
+  enable: true  # 启用内置 DNS（关了用系统 DNS，分流会不准，保持开）
+  ipv6: false  # false=AAAA 查询返回空（与顶层 ipv6=false 配套）
+  enhanced-mode: fake-ip  # 增强模式：fake-ip(推荐) / redir-host
+  fake-ip-range: 198.18.0.1/16  # fake-ip 地址池（固定用这个段，别乱改）
+  # fake-ip-range6: fdfe:dcba:9876::1/64  # IPv6 的 fake-ip 池（ipv6 关时不用）
+  fake-ip-filter-mode: blacklist  # 过滤模式：blacklist=名单内给真IP(推荐) / whitelist=只有名单内给假IP / rule=按规则
+  fake-ip-filter:  # 这些域名不给 fake-ip、直接真解析（局域网/内网穿透/系统服务）
+    - '*.lan'
+    - '*.local'
+    - 'localhost'
+    # - '+.stun.*'  # 需要语音/游戏联机真实 IP 时再放开这类
+  # fake-ip-ttl: 1  # fake-ip 回答的 TTL（官方不建议改）
+  # listen: 0.0.0.0:1053  # 独立 DNS 监听端口（给局域网其他设备当 DNS 时才开，手机端不用）
+  cache-algorithm: arc  # DNS 缓存算法：arc(推荐,命中率高) / lru
+  # prefer-h3: false  # DoH 优先走 HTTP/3（网络不支持 QUIC 时反而慢，保持关）
+  use-hosts: true  # 启用下方 hosts 自定义映射（默认 true）
+  use-system-hosts: true  # 读取系统 hosts 文件（默认 true）
+  default-nameserver:  # 兜底 DNS：只用来解析下面 DoH 服务器自己的域名，必须是纯 IP
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:  # 主 DNS（国内直连解析）
+    - 223.5.5.5
+    - 119.29.29.29
+  proxy-server-nameserver:  # 专门解析「节点服务器域名」的 DNS（防递归、解析更准）
+    - https://223.5.5.5/dns-query
+  # proxy-server-nameserver-policy:  # 上项的按域名细分版（一般不用）
+  #   'node.example.com': https://223.5.5.5/dns-query
+  nameserver-policy:  # 按域名指定 DNS：国内与私有域名走国内 DoH
+    geosite:private: system
+    geosite:cn: https://223.5.5.5/dns-query
+  fallback:  # 备用 DNS：主 DNS 结果被判定污染时用它（这里仍用国内可信 DoH，避免境外 DNS 直连被墙）
+    - https://223.5.5.5/dns-query
+    - https://1.12.12.12/dns-query
+  fallback-filter:  # 判定主 DNS 结果是否可信的规则
+    geoip: true  # 用 GeoIP 判定
+    geoip-code: CN  # 结果 IP 是 CN 就信主 DNS；不是 CN 就改用 fallback 复查
+    geosite:
+      - gfw  # geosite 里 gfw 名单的域名直接走 fallback
+    ipcidr:  # 结果落到这些段视为污染
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+    domain:  # 这些域名永远走 fallback
+      - '+.google.com'
+      - '+.facebook.com'
+      - '+.youtube.com'
+  # fallback-lazy-query: false  # true=先看主DNS结果再决定要不要查fallback（省流量但慢半拍），推荐 false
+  respect-rules: true  # DNS 查询跟随分流规则（开了必须配 proxy-server-nameserver，已配），推荐 true
+  # direct-nameserver:  # DIRECT 直连域名的专用 DNS（一般不用，跟随 nameserver 即可）
+  #   - 223.5.5.5
+  # direct-nameserver-follow-policy: false  # direct-nameserver 是否跟随 nameserver-policy
+
+# ---- 自定义 hosts（一般不用；内网服务固定 IP 时才写） ----
+# hosts:
+#   'nas.home': 192.168.1.10
+#   '*.internal.example.com': 10.0.0.2
+
+# ---- 域名嗅探 ----
+sniffer:
+  enable: true  # 开启嗅探：从 TLS/HTTP 流量里认出真实域名再分流，推荐开（纯 IP 连接分流准很多）
+  force-dns-mapping: true  # 对 redir-host 流量强制做 DNS 映射嗅探
+  parse-pure-ip: true  # 对没有域名的纯 IP 流量也尝试嗅探
+  override-destination: true  # 用嗅探出的域名覆盖目标地址（默认 true，分流更准）
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]  # HTTP 嗅探端口
+      override-destination: true
+    TLS:
+      ports: [443, 8443]  # TLS 嗅探端口（读 SNI）
+    QUIC:
+      ports: [443]  # QUIC 嗅探端口（不开则 UDP 分流不准）
+  skip-domain:
+    - '*.apple.com'  # 苹果域名跳过嗅探（防推送/系统服务异常）
+  # force-domain:  # 强制嗅探的域名（一般不用）
+  #   - '+.example.com'
+  # skip-src-address:  # 按来源 IP 跳过嗅探
+  #   - 192.168.0.0/16
+  # skip-dst-address:  # 按目标 IP 跳过嗅探
+  #   - 10.0.0.0/8
+
+# ---- TUN（虚拟网卡） ----
+# 【三端差异】本文件三端通用，其余部分不用改，只有这一段按设备调（已对旧配置逐份核对）：
+#   安卓：就用下面现行值（enable true + stack gvisor + auto-route + dns-hijack any:53）
+#   iOS ：enable 改 false（虚拟网卡由客户端 App 自己接管，配置里开着会冲突）
+#   PC  ：stack 改 system，并把下方 auto-detect-interface 改为 true（去掉行首 # 启用）
+tun:
+  enable: true  # 开启 TUN 接管全局流量（手机端客户端一般会自动接管，这里的设置是给内核的）
+  stack: gvisor  # 协议栈：gvisor(兼容好,推荐) / system(省资源) / mixed(TCP走system UDP走gvisor)
+  auto-route: true  # 自动写入路由表把流量送进 TUN
+  dns-hijack:
+    - any:53  # 劫持全部 53 端口 DNS 查询到内核（防 DNS 泄露，必开）
+  # auto-redirect: true  # 仅 Linux：用 iptables/nft 做透明重定向（手机端不用）
+  # auto-detect-interface: true  # 自动探测出站网卡（多网卡设备才需要）
+  # strict-route: true  # 严格路由：防流量绕过 TUN（开了个别局域网功能可能受影响，按需）
+  # mtu: 9000  # TUN 网卡 MTU（默认即可，网络异常时试 1500）
+  # device: utun0  # 网卡名（macOS 必须 utun 开头，一般自动）
+  # endpoint-independent-nat: true  # 全锥形 NAT：游戏联机/语音需要时开
+  # udp-timeout: 300  # UDP 会话超时（秒，默认 300）
+  # route-exclude-address:  # 不进 TUN 的网段（局域网设备直连异常时加）
+  #   - 192.168.0.0/16
+  # include-package:  # 仅安卓：只接管这些包名（分应用代理的另一实现，一般在客户端里设）
+  #   - com.example.app
+  # exclude-package:  # 仅安卓：这些包名不接管（银行类闪退时加）
+  #   - com.bank.app
+
+# ---- NTP 时间同步（一般不用：手机/电脑系统自带校时；仅软路由/服务器部署时开） ----
+# ntp:
+#   enable: true
+#   server: time.apple.com  # 默认 time.apple.com
+#   port: 123
+#   interval: 30  # 同步间隔（分钟）
+#   dialer-proxy: DIRECT  # 校时走哪个出站（默认 DIRECT，绕开规则）
+#   # write-to-system: false  # 把时间写回系统（需管理员/root）
+
+# ---- 实验性 ----
+experimental:
+  quic-go-disable-gso: true  # QUIC 性能修正（现行配置在用，保持）
+  # quic-go-disable-ecn: false  # QUIC 的 ECN 开关（网络异常时才动）
+  # dialer-ip4p-convert: false  # IP4P 地址转换（小众场景，一般不用）
+
+
+proxies: []   # 不用订阅的话，在这里手动粘贴节点
+
+# ---- 策略组：以仓库根目录 Group.ini 为准（顺序、成员与之一致；✈️ 我的节点为 Surge 专用，不进本文件） ----
+proxy-groups:
+  - name: "AI"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/ChatGPT.png
+    proxies:
+      - "🇺🇸 美国节点"
+      - "🇭🇰 香港节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "兜底"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Proxy/Global.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇺🇸 美国节点"
+      - "🇸🇬 新国节点"
+  - name: "国内服务"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Microsoft.png
+    proxies:
+      - "DIRECT"
+      - "🇭🇰 香港节点"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外服务"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Google.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外社交"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Telegram.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国外媒体"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/YouTube.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇨🇳 台湾节点"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "国内媒体"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/bilibili.png
+    proxies:
+      - "DIRECT"
+      - "🇭🇰 香港节点"
+      - "🇨🇳 台湾节点"
+  - name: "游戏平台"
+    type: select  # 手动选择节点
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/Game.png
+    proxies:
+      - "🇭🇰 香港节点"
+      - "DIRECT"
+      - "🇺🇸 美国节点"
+      - "🇯🇵 日本节点"
+      - "🇰🇷 韩国节点"
+      - "🇸🇬 新国节点"
+  - name: "🇭🇰 香港节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Hong_Kong.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇭🇰|香港|Hong|HK)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+  - name: "🇺🇸 美国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/United_States.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇺🇸|美国|States|US)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+  - name: "🇯🇵 日本节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Japan.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇯🇵|日本|Japan|JP)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+  - name: "🇨🇳 台湾节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Taiwan.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇨🇳|台湾|Tai|TW)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+  - name: "🇰🇷 韩国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Korea.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇰🇷|韩国|Korea|KR)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+  - name: "🇸🇬 新国节点"
+    type: url-test  # 自动测速选最快
+    icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Singapore.png
+    use:
+      - "订阅节点"
+    filter: "(?i)(?:🇸🇬|新加坡|Singapore|SG)"
+    url: http://www.gstatic.com/generate_204
+    interval: 300
+    tolerance: 50
+
+# ---- 规则集：以仓库根目录 Rule.ini 为准（顺序与之一致） ----
+rule-providers:
+  Advertising:  # 去广告
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/Advertising.yaml"
+    path: ./rules/Advertising.yaml
+    interval: 86400  # 每天更新一次
+  BanAD:  # 去广告
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/BanAD.yaml"
+    path: ./rules/BanAD.yaml
+    interval: 86400  # 每天更新一次
+  Apple_All:  # 苹果-Apple_All
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/苹果服务/Apple_All.yaml"
+    path: ./rules/Apple_All.yaml
+    interval: 86400  # 每天更新一次
+  LinkedIn:  # 微软-LinkedIn
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/LinkedIn.yaml"
+    path: ./rules/LinkedIn.yaml
+    interval: 86400  # 每天更新一次
+  Microsoft:  # 微软-Microsoft
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Microsoft.yaml"
+    path: ./rules/Microsoft.yaml
+    interval: 86400  # 每天更新一次
+  Xbox:  # 微软-Xbox
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Xbox.yaml"
+    path: ./rules/Xbox.yaml
+    interval: 86400  # 每天更新一次
+  GitHub:  # GitHub
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/GitHub.yaml"
+    path: ./rules/GitHub.yaml
+    interval: 86400  # 每天更新一次
+  Google:  # 谷歌-Google
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/Google.yaml"
+    path: ./rules/Google.yaml
+    interval: 86400  # 每天更新一次
+  GoogleFCM:  # 谷歌-GoogleFCM
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/GoogleFCM.yaml"
+    path: ./rules/GoogleFCM.yaml
+    interval: 86400  # 每天更新一次
+  AI:  # AI 服务
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/ai/AI.yaml"
+    path: ./rules/AI.yaml
+    interval: 86400  # 每天更新一次
+  WeChat:  # 微信
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国内社交/WeChat.yaml"
+    path: ./rules/WeChat.yaml
+    interval: 86400  # 每天更新一次
+  Facebook:  # Facebook
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Facebook.yaml"
+    path: ./rules/Facebook.yaml
+    interval: 86400  # 每天更新一次
+  Telegram:  # Telegram
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Telegram.yaml"
+    path: ./rules/Telegram.yaml
+    interval: 86400  # 每天更新一次
+  Twitter:  # Twitter
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Twitter.yaml"
+    path: ./rules/Twitter.yaml
+    interval: 86400  # 每天更新一次
+  Instagram:  # instagram
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Instagram.yaml"
+    path: ./rules/Instagram.yaml
+    interval: 86400  # 每天更新一次
+  Bilibili:  # 哔哩哔哩
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Bilibili.yaml"
+    path: ./rules/Bilibili.yaml
+    interval: 86400  # 每天更新一次
+  ChinaMedia:  # 国内流媒体
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/ChinaMedia.yaml"
+    path: ./rules/ChinaMedia.yaml
+    interval: 86400  # 每天更新一次
+  YouTube:  # YouTube
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/YouTube.yaml"
+    path: ./rules/YouTube.yaml
+    interval: 86400  # 每天更新一次
+  Netflix:  # Netflix
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Netflix.yaml"
+    path: ./rules/Netflix.yaml
+    interval: 86400  # 每天更新一次
+  Disney:  # Disney+
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Disney.yaml"
+    path: ./rules/Disney.yaml
+    interval: 86400  # 每天更新一次
+  Twitch:  # Twitch
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Twitch.yaml"
+    path: ./rules/Twitch.yaml
+    interval: 86400  # 每天更新一次
+  Spotify:  # Spotify
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Spotify.yaml"
+    path: ./rules/Spotify.yaml
+    interval: 86400  # 每天更新一次
+  TikTok:  # TikTok
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/TikTok.yaml"
+    path: ./rules/TikTok.yaml
+    interval: 86400  # 每天更新一次
+  GlobalMedia:  # 国外流媒体
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/GlobalMedia.yaml"
+    path: ./rules/GlobalMedia.yaml
+    interval: 86400  # 每天更新一次
+  Game:  # 游戏平台（13 合 1）
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/游戏平台/Game.yaml"
+    path: ./rules/Game.yaml
+    interval: 86400  # 每天更新一次
+  ChinaMax:  # 大陆域名直连
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/ChinaMax.yaml"
+    path: ./rules/ChinaMax.yaml
+    interval: 86400  # 每天更新一次
+  Proxy:  # 通用代理
+    type: http
+    behavior: classical  # 经典行为（域名规则）
+    url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/Proxy.yaml"
+    path: ./rules/Proxy.yaml
+    interval: 86400  # 每天更新一次
+# ---- 分流规则：按 rules.ini 的顺序，内联规则（IP-CIDR/FINAL）在最后 ----
+rules:
+  - IP-CIDR,0.0.0.0/32,REJECT
+  - RULE-SET,Advertising,REJECT  # 去广告
+  - RULE-SET,BanAD,REJECT  # 去广告
+  - RULE-SET,Apple_All,国内服务  # 苹果-Apple_All
+  - RULE-SET,LinkedIn,国内服务  # 微软-LinkedIn
+  - RULE-SET,Microsoft,国内服务  # 微软-Microsoft
+  - RULE-SET,Xbox,国内服务  # 微软-Xbox
+  - RULE-SET,GitHub,国外服务  # GitHub
+  - RULE-SET,Google,国外服务  # 谷歌-Google
+  - RULE-SET,GoogleFCM,国外服务  # 谷歌-GoogleFCM
+  - RULE-SET,AI,AI  # AI 服务
+  - RULE-SET,WeChat,DIRECT  # 微信
+  - RULE-SET,Facebook,国外社交  # Facebook
+  - RULE-SET,Telegram,国外社交  # Telegram
+  - RULE-SET,Twitter,国外社交  # Twitter
+  - RULE-SET,Instagram,国外社交  # instagram
+  - RULE-SET,Bilibili,国内媒体  # 哔哩哔哩
+  - RULE-SET,ChinaMedia,国内媒体  # 国内流媒体
+  - RULE-SET,YouTube,国外媒体  # YouTube
+  - RULE-SET,Netflix,国外媒体  # Netflix
+  - RULE-SET,Disney,国外媒体  # Disney+
+  - RULE-SET,Twitch,国外媒体  # Twitch
+  - RULE-SET,Spotify,国外媒体  # Spotify
+  - RULE-SET,TikTok,国外媒体  # TikTok
+  - RULE-SET,GlobalMedia,国外媒体  # 国外流媒体
+  - RULE-SET,Game,游戏平台  # 游戏平台（13 合 1）
+  - RULE-SET,ChinaMax,DIRECT  # 大陆域名直连
+  - RULE-SET,Proxy,兜底  # 通用代理
+  - IP-CIDR,10.0.0.0/8,DIRECT  # 局域网直连
+  - IP-CIDR,172.16.0.0/12,DIRECT  # 局域网直连
+  - IP-CIDR,192.168.0.0/16,DIRECT  # 局域网直连
+  - MATCH,兜底
