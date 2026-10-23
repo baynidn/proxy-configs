@@ -1,17 +1,6 @@
-# ============================================================
-# Clash 配置（Mihomo 内核 · 全字段注释版）
-# ------------------------------------------------------------
-# 定位：通用设置按 Mihomo 官方 Wiki 写全，每项注明「作用 / 推荐值」；
-#       策略组、规则集、规则沿用自家现行结构（规则走 rules-public 公开仓）。
-# 字段来源：Mihomo 官方 Wiki https://wiki.metacubex.one/config/
-# 适用：FlClash / Clash Meta / Mihomo Party 等 Mihomo 内核客户端
-# 使用前替换占位符：
-#   <你的订阅地址>  下方 proxy-providers 的节点订阅链接
-#   <你的API密钥>   external-controller 的 secret（可选，见该项说明）
-# 注意：本文件是 Mihomo 专用，Stash 不认其中约一半字段（见 stash/Stash.yaml 文件头清单），别混用。
-# ============================================================
+# Clash 配置（Mihomo · 全字段注释版）—— 通用设置按官方 Wiki 写全，未启用项以注释保留
+# 来源：https://wiki.metacubex.one/config/ ；规则走 rules-public 公开仓；占位符 <你的订阅地址> 换成你的订阅
 
-# ---- 节点订阅（proxy-providers）：你的节点从这里来 ----
 proxy-providers:
   订阅节点:
     type: http  # 类型：http=远程订阅 / file=本地文件 / inline=内联（必填）
@@ -102,6 +91,7 @@ geox-url:  # 数据库下载源：默认 GitHub 源在你这边被墙，统一�
 # 服务器地址可加 # 后缀参数：#h3=强制HTTP/3、#DIRECT=指定出站、disable-qtype-65=屏蔽HTTPS查询类型，& 连接多个。
 dns:
   enable: true  # 启用内置 DNS（关了用系统 DNS，分流会不准，保持开）
+  # DNS 地址可用 # 后缀参数（& 连接）：#h3 强制 H3 / #skip-cert-verify / #ecs=网段（如 #ecs=223.5.5.0/24）
   ipv6: false  # false=AAAA 查询返回空（与顶层 ipv6=false 配套）
   enhanced-mode: fake-ip  # 增强模式：fake-ip(推荐) / redir-host
   fake-ip-range: 198.18.0.1/16  # fake-ip 地址池（固定用这个段，别乱改）
@@ -193,6 +183,7 @@ tun:
   auto-route: true  # 自动写入路由表把流量送进 TUN
   dns-hijack:
     - any:53  # 劫持全部 53 端口 DNS 查询到内核（防 DNS 泄露，必开）
+  # dns-mode: hijack  # 系统 DNS 配置方式：disabled/native/hijack（不写=平台默认）
   # auto-redirect: true  # 仅 Linux：用 iptables/nft 做透明重定向（手机端不用）
   # auto-detect-interface: true  # 自动探测出站网卡（多网卡设备才需要）
   # strict-route: true  # 严格路由：防流量绕过 TUN（开了个别局域网功能可能受影响，按需）
@@ -227,6 +218,8 @@ proxies: []   # 不用订阅的话，在这里手动粘贴节点
 
 # ---- 策略组：以仓库根目录 Group.ini 为准（顺序、成员与之一致；✈️ 我的节点为 Surge 专用，不进本文件） ----
 proxy-groups:
+# 节点字段备查（节点走订阅）：通用 name/type/server/port/ip-version/udp/interface-name/routing-mark/tfo/mptcp/dialer-proxy；TLS 类 tls/sni/fingerprint/alpn/skip-cert-verify；smux 类 smux.enabled/protocol/max-connections/min-streams/max-streams/brutal-opts
+# 组可选字段（未用到的）：lazy=false 组未选中也测速（默认 true 不测）/ default-selected 首次导入默认落点 / timeout 组测速超时 / disable-udp 按组禁 UDP
   - name: "AI"
     type: select  # 手动选择节点
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/App/ChatGPT.png
