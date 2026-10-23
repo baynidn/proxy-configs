@@ -1,15 +1,15 @@
-# ============================================================
-# Stash 配置（官方字段版 · 全字段注释版）
-# ------------------------------------------------------------
-# 重要：Stash 是 Clash Premium 兼容内核，不是 Mihomo。
-# 本文件以 Stash 官方文档（stash.wiki）为据；个别未载字段（订阅层 benchmark/filter）经实测可用而保留。
-# 字段来源：https://stash.wiki/configuration/example-config 等官方页
-# 使用前替换占位符：<你的订阅地址> = 节点订阅链接
-# 三端说明：本文件 iOS / 安卓 / PC 三端通用，无需任何修改——Stash 没有 tun 段，
-#   虚拟网卡由各平台 App 自己接管。
-# ============================================================
+# Stash 配置（全字段注释版）—— 以 stash.wiki 为据；个别未载字段（订阅层 benchmark/filter）经实测可用而保留
+# 来源：https://stash.wiki ；占位符 <你的订阅地址> 换成你的订阅；三端通用（Stash 无 tun 段）
 
-# ---- 节点订阅（proxy-providers）：Stash 只认下面这几个字段 ----
+# ---- HTTP 引擎与 MITM（注释=未启用；字段据 stash.wiki 的 http 段） ----
+# http:
+#   force-http-engine: ['*:80']  # 强制指定连接进 HTTP 引擎
+#   ca: ''  # MITM 证书（PKCS#12 Base64，可在 App 里生成）
+#   ca-passphrase: ''  # 证书密码
+#   mitm: []  # 做 MITM 的域名（*. 通配 / 域名:* 全端口 / - 前缀排除）
+#   url-rewrite: []  # 每条格式：正则 目标 策略（header/302/307/reject 等）
+#   header-rewrite / body-rewrite / mock / script  # 改头/改体/模拟响应/脚本（script 子字段：match/name/type/require-body/timeout/argument/engine/binary-mode/max-size）
+
 proxy-providers:
   订阅节点:
     url: "<你的订阅地址>"  # 订阅链接
@@ -68,6 +68,7 @@ dns:
 
 
 proxies: []   # 不用订阅的话，在这里手动粘贴节点
+# 节点通用字段（走订阅时仅备查）：name/type/server/port/tls/skip-cert-verify/server-cert-fingerprint/sni/alpn/interface-name/block-quic/benchmark-url/benchmark-timeout/benchmark-disabled/ports/hop-interval/udp-nameserver
 
 # ---- 策略组：以仓库根目录 Group.ini 为准（顺序、成员与之一致；✈️ 我的节点为 Surge 专用，不进本文件） ----
 proxy-groups:
