@@ -57,8 +57,8 @@ dns:
       - '+.youtube.com'
   fake-ip-range: 198.18.0.1/16  # fake-ip 地址池（默认值，别乱改）
   fake-ip-filter:  # 这些域名返回真实 IP（支持通配 + geosite: / rule-set: 条目）
-    - '*.lan'
-    - '*.local'
+    - '+.lan'
+    - '+.local'
     - 'localhost'
     - 'geosite:private'
   ipv6: false  # false=只屏蔽给应用的 AAAA 回答（与顶层 ipv6 分工不同，这里管回答、顶层管自身解析）
@@ -214,7 +214,7 @@ rule-providers:
     path: ./rules/Apple_All.yaml
     interval: 86400  # 每天更新一次
   LinkedIn:  # 微软-LinkedIn
-    behavior: classical  # 经典行为（域名规则）
+    behavior: domain  # 纯域名集：索引匹配更快、更省内存（官方推荐）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/LinkedIn.yaml"
     path: ./rules/LinkedIn.yaml
     interval: 86400  # 每天更新一次
@@ -224,12 +224,12 @@ rule-providers:
     path: ./rules/Microsoft.yaml
     interval: 86400  # 每天更新一次
   Xbox:  # 微软-Xbox
-    behavior: classical  # 经典行为（域名规则）
+    behavior: domain  # 纯域名集：索引匹配更快、更省内存（官方推荐）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Xbox.yaml"
     path: ./rules/Xbox.yaml
     interval: 86400  # 每天更新一次
   GitHub:  # GitHub
-    behavior: classical  # 经典行为（域名规则）
+    behavior: domain  # 纯域名集：索引匹配更快、更省内存（官方推荐）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/GitHub.yaml"
     path: ./rules/GitHub.yaml
     interval: 86400  # 每天更新一次
@@ -269,7 +269,7 @@ rule-providers:
     path: ./rules/Twitter.yaml
     interval: 86400  # 每天更新一次
   Instagram:  # instagram
-    behavior: classical  # 经典行为（域名规则）
+    behavior: domain  # 纯域名集：索引匹配更快、更省内存（官方推荐）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Instagram.yaml"
     path: ./rules/Instagram.yaml
     interval: 86400  # 每天更新一次
