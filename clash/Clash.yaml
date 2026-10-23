@@ -29,7 +29,7 @@ proxy-providers:
       interval: 600  # 探活间隔（秒）
       timeout: 5000  # 探活超时（毫秒）
       lazy: true  # true=组没被用时不探活（默认，省流量）
-      # expected-status: 204  # 期望状态码，不填=任意 2xx/3xx 都算活
+      expected-status: 204  # 期望状态码：只有返回 204 才算活，防劫持页返回 200 误判可用
     # override:  # 统一改写节点参数（一般不用；需要时逐项开）
     #   udp: true  # 强制给节点加 UDP
     #   skip-cert-verify: false  # 统一跳过证书验证
@@ -118,7 +118,7 @@ dns:
   # prefer-h3: false  # DoH 优先走 HTTP/3（网络不支持 QUIC 时反而慢，保持关）
   use-hosts: true  # 启用下方 hosts 自定义映射（默认 true）
   use-system-hosts: true  # 读取系统 hosts 文件（默认 true）
-  default-nameserver:  # 兜底 DNS：只用来解析下面 DoH 服务器自己的域名，必须是纯 IP
+  default-nameserver:  # 兜底 DNS：只用来解析下面 DoH 服务器自己的域名，必须为 IP（可为 IP 形式的加密 DNS）
     - 223.5.5.5
     - 119.29.29.29
   nameserver:  # 主 DNS（国内直连解析）
@@ -128,17 +128,17 @@ dns:
     - https://223.5.5.5/dns-query
   # proxy-server-nameserver-policy:  # 上项的按域名细分版（一般不用）
   #   'node.example.com': https://223.5.5.5/dns-query
-  nameserver-policy:  # 按域名指定 DNS：国内与私有域名走国内 DoH
+  nameserver-policy:  # 按域名指定 DNS：国内与私有域名走国内 DoH，gfw 名单走境外 DoH
     geosite:private: system
     geosite:cn: https://223.5.5.5/dns-query
+    'geosite:gfw': https://8.8.8.8/dns-query
   fallback:  # 备用 DNS：主 DNS 结果被判定污染时用它（这里仍用国内可信 DoH，避免境外 DNS 直连被墙）
     - https://223.5.5.5/dns-query
     - https://1.12.12.12/dns-query
   fallback-filter:  # 判定主 DNS 结果是否可信的规则
     geoip: true  # 用 GeoIP 判定
     geoip-code: CN  # 结果 IP 是 CN 就信主 DNS；不是 CN 就改用 fallback 复查
-    geosite:
-      - gfw  # geosite 里 gfw 名单的域名直接走 fallback
+    # geosite 子项官方已标废弃：gfw 名单改由 nameserver-policy 的 'geosite:gfw' 直接指定境外解析
     ipcidr:  # 结果落到这些段视为污染
       - 240.0.0.0/4
       - 0.0.0.0/32
@@ -218,7 +218,7 @@ tun:
 
 # ---- 实验性 ----
 experimental:
-  quic-go-disable-gso: true  # QUIC 性能修正（现行配置在用，保持）
+  quic-go-disable-gso: true  # 禁用 QUIC 的 GSO 分段卸载（兼容开关；文档示例为 false，现行配置沿用 true）
   # quic-go-disable-ecn: false  # QUIC 的 ECN 开关（网络异常时才动）
   # dialer-ip4p-convert: false  # IP4P 地址转换（小众场景，一般不用）
 
@@ -311,6 +311,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇭🇰|香港|(\\b(HK|HKG|Hong)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
   - name: "🇺🇸 美国节点"
@@ -320,6 +321,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\\b(US|USA|United States)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
   - name: "🇯🇵 日本节点"
@@ -329,6 +331,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\\b(JP|JPN|Japan)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
   - name: "🇨🇳 台湾节点"
@@ -338,6 +341,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇹🇼|台湾|(\\b(TW|TWN|Tai|Taiwan)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
   - name: "🇰🇷 韩国节点"
@@ -347,6 +351,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇰🇷|韩国|韓|首尔|(\\b(KR|KOR|Korea)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
   - name: "🇸🇬 新国节点"
@@ -356,6 +361,7 @@ proxy-groups:
       - "订阅节点"
     filter: "(?i)(?:🇸🇬|新加坡|狮|(\\b(SG|SGP|Singapore)(\\d+)?\\b))"
     url: http://www.gstatic.com/generate_204
+    expected-status: 204  # 只有返回 204 才算活，防劫持页误判
     interval: 300
     tolerance: 50
 
@@ -363,163 +369,163 @@ proxy-groups:
 rule-providers:
   Advertising:  # 去广告
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/Advertising.yaml"
     path: ./rules/Advertising.yaml
     interval: 86400  # 每天更新一次
   BanAD:  # 去广告
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/去广告/BanAD.yaml"
     path: ./rules/BanAD.yaml
     interval: 86400  # 每天更新一次
   Apple_All:  # 苹果-Apple_All
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/苹果服务/Apple_All.yaml"
     path: ./rules/Apple_All.yaml
     interval: 86400  # 每天更新一次
   LinkedIn:  # 微软-LinkedIn
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/LinkedIn.yaml"
     path: ./rules/LinkedIn.yaml
     interval: 86400  # 每天更新一次
   Microsoft:  # 微软-Microsoft
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Microsoft.yaml"
     path: ./rules/Microsoft.yaml
     interval: 86400  # 每天更新一次
   Xbox:  # 微软-Xbox
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/Xbox.yaml"
     path: ./rules/Xbox.yaml
     interval: 86400  # 每天更新一次
   GitHub:  # GitHub
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/微软服务/GitHub.yaml"
     path: ./rules/GitHub.yaml
     interval: 86400  # 每天更新一次
   Google:  # 谷歌-Google
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/Google.yaml"
     path: ./rules/Google.yaml
     interval: 86400  # 每天更新一次
   GoogleFCM:  # 谷歌-GoogleFCM
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/谷歌服务/GoogleFCM.yaml"
     path: ./rules/GoogleFCM.yaml
     interval: 86400  # 每天更新一次
   AI:  # AI 服务
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/ai/AI.yaml"
     path: ./rules/AI.yaml
     interval: 86400  # 每天更新一次
   WeChat:  # 微信
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国内社交/WeChat.yaml"
     path: ./rules/WeChat.yaml
     interval: 86400  # 每天更新一次
   Facebook:  # Facebook
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Facebook.yaml"
     path: ./rules/Facebook.yaml
     interval: 86400  # 每天更新一次
   Telegram:  # Telegram
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Telegram.yaml"
     path: ./rules/Telegram.yaml
     interval: 86400  # 每天更新一次
   Twitter:  # Twitter
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Twitter.yaml"
     path: ./rules/Twitter.yaml
     interval: 86400  # 每天更新一次
   Instagram:  # instagram
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/国外社交/Instagram.yaml"
     path: ./rules/Instagram.yaml
     interval: 86400  # 每天更新一次
   Bilibili:  # 哔哩哔哩
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Bilibili.yaml"
     path: ./rules/Bilibili.yaml
     interval: 86400  # 每天更新一次
   ChinaMedia:  # 国内流媒体
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/ChinaMedia.yaml"
     path: ./rules/ChinaMedia.yaml
     interval: 86400  # 每天更新一次
   YouTube:  # YouTube
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/YouTube.yaml"
     path: ./rules/YouTube.yaml
     interval: 86400  # 每天更新一次
   Netflix:  # Netflix
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Netflix.yaml"
     path: ./rules/Netflix.yaml
     interval: 86400  # 每天更新一次
   Disney:  # Disney+
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Disney.yaml"
     path: ./rules/Disney.yaml
     interval: 86400  # 每天更新一次
   Twitch:  # Twitch
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Twitch.yaml"
     path: ./rules/Twitch.yaml
     interval: 86400  # 每天更新一次
   Spotify:  # Spotify
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/Spotify.yaml"
     path: ./rules/Spotify.yaml
     interval: 86400  # 每天更新一次
   TikTok:  # TikTok
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/TikTok.yaml"
     path: ./rules/TikTok.yaml
     interval: 86400  # 每天更新一次
   GlobalMedia:  # 国外流媒体
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/视频媒体/GlobalMedia.yaml"
     path: ./rules/GlobalMedia.yaml
     interval: 86400  # 每天更新一次
   Game:  # 游戏平台（13 合 1）
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/游戏平台/Game.yaml"
     path: ./rules/Game.yaml
     interval: 86400  # 每天更新一次
   ChinaMax:  # 大陆域名直连
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/ChinaMax.yaml"
     path: ./rules/ChinaMax.yaml
     interval: 86400  # 每天更新一次
   Proxy:  # 通用代理
     type: http
-    behavior: classical  # 经典行为（域名规则）
+    behavior: classical  # 经典行为（支持全部规则类型：域名/IP/进程等）
     url: "https://raw.githubusercontent.com/baynidn/rules-public/main/rules/clash/通用代理/Proxy.yaml"
     path: ./rules/Proxy.yaml
     interval: 86400  # 每天更新一次
