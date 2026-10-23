@@ -338,6 +338,9 @@ rule-providers:
 # ---- 分流规则：rules.ini 的顺序，内联规则（IP-CIDR/FINAL）在最后 ----
 rules:
   - IP-CIDR,0.0.0.0/32,REJECT
+  - IP-CIDR,10.0.0.0/8,DIRECT  # 局域网直连
+  - IP-CIDR,172.16.0.0/12,DIRECT  # 局域网直连
+  - IP-CIDR,192.168.0.0/16,DIRECT  # 局域网直连
   - RULE-SET,Advertising,REJECT  # 去广告
   - RULE-SET,BanAD,REJECT  # 去广告
   - RULE-SET,Apple_All,国内服务  # 苹果-Apple_All
@@ -365,7 +368,4 @@ rules:
   - RULE-SET,Game,游戏平台  # 游戏平台（13 合 1）
   - RULE-SET,ChinaMax,DIRECT  # 大陆域名直连
   - RULE-SET,Proxy,兜底  # 通用代理
-  - IP-CIDR,10.0.0.0/8,DIRECT  # 局域网直连
-  - IP-CIDR,172.16.0.0/12,DIRECT  # 局域网直连
-  - IP-CIDR,192.168.0.0/16,DIRECT  # 局域网直连
   - MATCH,兜底
