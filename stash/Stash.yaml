@@ -2,7 +2,7 @@
 # Stash 配置（官方字段版 · 全字段注释版）
 # ------------------------------------------------------------
 # 重要：Stash 是 Clash Premium 兼容内核，不是 Mihomo。
-# 本文件只写 Stash 官方文档（stash.wiki）明确支持的字段。
+# 本文件以 Stash 官方文档（stash.wiki）为据；个别未载字段（订阅层 benchmark/filter）经实测可用而保留。
 # 字段来源：https://stash.wiki/configuration/example-config 等官方页
 # 使用前替换占位符：<你的订阅地址> = 节点订阅链接
 # 三端说明：本文件 iOS / 安卓 / PC 三端通用，无需任何修改——Stash 没有 tun 段，
@@ -35,7 +35,7 @@ ipv6: false  # false=Stash 自身解析只走 IPv4 且不给应用返回 AAAA。
 
 # ---- DNS（Stash 只有 Fake-IP 一种模式，没有 enhanced-mode 这个字段） ----
 dns:
-  default-nameserver:  # 兜底 DNS：解析下面加密 DNS 的域名用；非 system 的条目必须是纯 IP
+  default-nameserver:  # 兜底 DNS：解析下面加密 DNS 的域名用；非 system 的条目必须为 IP（可为 IP 形式的加密 DNS）
     - 223.5.5.5
     - 119.29.29.29
   nameserver:  # 主 DNS：支持 UDP/TCP/DoT/DoH/DoH3/DoQ 与 system；全部服务器并发查询、取最快（官方建议不超过 2 个）
@@ -45,8 +45,9 @@ dns:
     'geosite:cn,private': https://223.5.5.5/dns-query
   proxy-server-nameserver:  # 专门解析「节点服务器域名」的 DNS：避免递归解析、节点域名解析更准（3.6+）
     - https://223.5.5.5/dns-query
-  fallback:  # 备用 DNS：与主 DNS 并发查询，由 fallback-filter 决定采信谁
-    - https://1.12.12.12/dns-query
+  fallback:  # 兜底 DNS：官方定位为境外可信解析（防主 DNS 被污染）；谷歌 DoH 为主、阿里 DoH 备份
+    - https://8.8.8.8/dns-query
+    - https://223.5.5.5/dns-query
   fallback-filter:  # 采信判定（Stash 只支持这四项，没有 geosite 项）
     geoip: true
     geoip-code: CN  # 默认 CN：结果是中国 IP 就信主 DNS
