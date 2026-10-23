@@ -152,7 +152,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Hong_Kong.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇭🇰|香港|Hong|HK)"
+    filter: "(?i)(?:🇭🇰|香港|(\\b(HK|HKG|Hong)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
   - name: "🇺🇸 美国节点"
@@ -160,7 +160,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/United_States.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇺🇸|美国|States|US)"
+    filter: "(?i)(?:🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\\b(US|USA|United States)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
   - name: "🇯🇵 日本节点"
@@ -168,7 +168,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Japan.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇯🇵|日本|Japan|JP)"
+    filter: "(?i)(?:🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\\b(JP|JPN|Japan)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
   - name: "🇨🇳 台湾节点"
@@ -176,7 +176,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Taiwan.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇨🇳|台湾|Tai|TW)"
+    filter: "(?i)(?:🇹🇼|台湾|(\\b(TW|TWN|Tai|Taiwan)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
   - name: "🇰🇷 韩国节点"
@@ -184,7 +184,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Korea.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇰🇷|韩国|Korea|KR)"
+    filter: "(?i)(?:🇰🇷|韩国|韓|首尔|(\\b(KR|KOR|Korea)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
   - name: "🇸🇬 新国节点"
@@ -192,7 +192,7 @@ proxy-groups:
     icon: https://raw.githubusercontent.com/baynidn/icons/main/Icon/Area/Singapore.png
     use:
       - "订阅节点"
-    filter: "(?i)(?:🇸🇬|新加坡|Singapore|SG)"
+    filter: "(?i)(?:🇸🇬|新加坡|狮|(\\b(SG|SGP|Singapore)(\\d+)?\\b))"
     interval: 300
     tolerance: 50
 
